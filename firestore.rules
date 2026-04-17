@@ -1,0 +1,114 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: leads
+    // Fields: name (string), phone (string), stage (string), uid (string), ...
+    //
+    // Collection: orders
+    // Fields: leadId (string), product (string), quantity (number), value (number), status (string), uid (string), ...
+    //
+    // Collection: interactions
+    // Fields: leadId (string), type (string), content (string), uid (string), ...
+    //
+    // Collection: users
+    // Fields: email (string), role (string), ...
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.uid;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' || 
+         (request.auth.token.email == "anirudh.bisen.21@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function isValidDateString(dateStr) {
+      return dateStr is string && dateStr.matches("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.*Z?$");
+    }
+
+    // ===============================================================
+    // Validation Functions
+    // ===============================================================
+
+    function isValidLead(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.phone is string && data.phone.size() > 0 && data.phone.size() < 20 &&
+             data.stage in ['Outreach Initiated', 'Product & Pricing Shared', 'Interested / Inquiry', 'Negotiation', 'Order Confirmed', 'Delivery Scheduled', 'Order Fulfilled', 'Follow-up / Repeat Opportunity'] &&
+             data.uid == request.auth.uid;
+    }
+
+    function isValidOrder(data) {
+      return data.product is string && data.product.size() > 0 &&
+             data.quantity is number && data.quantity >= 0 &&
+             data.value is number && data.value >= 0 &&
+             data.status in ['Pending', 'Confirmed', 'In Transit', 'Delivered', 'Cancelled'] &&
+             data.uid == request.auth.uid;
+    }
+
+    function isValidInteraction(data) {
+      return data.type in ['WhatsApp', 'Call', 'Note', 'Email'] &&
+             data.content is string && data.content.size() < 5000 &&
+             data.uid == request.auth.uid;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId) && request.resource.data.role == 'user';
+      allow update: if isAdmin() || (isOwner(userId) && request.resource.data.role == resource.data.role);
+    }
+
+    match /leads/{leadId} {
+      allow read: if isDocOwner() || isAdmin();
+      allow create: if isAuthenticated() && isValidLead(request.resource.data);
+      allow update: if (isDocOwner() || isAdmin()) && isValidLead(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /orders/{orderId} {
+      allow read: if isDocOwner() || isAdmin();
+      allow create: if isAuthenticated() && isValidOrder(request.resource.data);
+      allow update: if (isDocOwner() || isAdmin()) && isValidOrder(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /interactions/{interactionId} {
+      allow read: if isDocOwner() || isAdmin();
+      allow create: if isAuthenticated() && isValidInteraction(request.resource.data);
+      allow update: if (isDocOwner() || isAdmin()) && isValidInteraction(request.resource.data);
+      allow delete: if isAdmin();
+    }
+  }
+}

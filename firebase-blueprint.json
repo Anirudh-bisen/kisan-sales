@@ -1,0 +1,82 @@
+{
+  "entities": {
+    "Lead": {
+      "title": "Lead",
+      "description": "Potential client or active relationship tracker",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string", "description": "Customer name or Business name" },
+        "phone": { "type": "string", "description": "WhatsApp/Phone number" },
+        "stage": { 
+          "type": "string", 
+          "enum": [
+            "Outreach Initiated",
+            "Product & Pricing Shared",
+            "Interested / Inquiry",
+            "Negotiation",
+            "Order Confirmed",
+            "Delivery Scheduled",
+            "Order Fulfilled",
+            "Follow-up / Repeat Opportunity"
+          ] 
+        },
+        "leadSource": { "type": "string" },
+        "lastInteractionAt": { "type": "string", "format": "date-time" },
+        "nextFollowUpAt": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "totalValue": { "type": "number", "description": "LTV or potential deal size" }
+      },
+      "required": ["name", "phone", "stage"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Bulk order details and delivery status",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "leadId": { "type": "string", "description": "References the Lead entity" },
+        "product": { "type": "string", "description": "Exotic fruit or vegetable name" },
+        "quantity": { "type": "number", "description": "Quantity in kg/units" },
+        "unit": { "type": "string", "description": "kg, crates, boxes" },
+        "value": { "type": "number", "description": "Deal value in currency" },
+        "deliveryLocation": { "type": "string" },
+        "expectedDeliveryDate": { "type": "string", "format": "date-time" },
+        "status": { 
+          "type": "string", 
+          "enum": ["Pending", "Confirmed", "In Transit", "Delivered", "Cancelled"] 
+        },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["leadId", "product", "quantity", "value", "status"]
+    },
+    "Interaction": {
+      "title": "Interaction",
+      "description": "Logs of WhatsApp messages, calls, or notes",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "leadId": { "type": "string" },
+        "type": { "type": "string", "enum": ["WhatsApp", "Call", "Note", "Email"] },
+        "content": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["leadId", "type", "content", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/leads/{leadId}": {
+      "schema": "Lead",
+      "description": "Main lead collection"
+    },
+    "/orders/{orderId}": {
+      "schema": "Order",
+      "description": "Orders collection"
+    },
+    "/leads/{leadId}/interactions/{interactionId}": {
+      "schema": "Interaction",
+      "description": "Interaction history for a lead"
+    }
+  }
+}

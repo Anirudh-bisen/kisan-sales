@@ -1,0 +1,40 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-serif: "Georgia", serif;
+  --font-sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
+
+  --color-bg: #F9F8F4;
+  --color-olive: #556B2F;
+  --color-olive-light: #A3B18A;
+  --color-ink: #1C1C1C;
+  --color-paper: #FFFFFF;
+  --color-editorial-border: rgba(85, 107, 47, 0.15);
+}
+
+@layer base {
+  body {
+    @apply bg-bg text-ink font-sans;
+  }
+}
+
+.editorial-card {
+  @apply bg-paper border border-editorial-border rounded p-4 shadow-sm transition-all;
+}
+
+.editorial-header {
+  @apply font-serif text-[11px] uppercase tracking-[1.5px] text-olive font-bold mb-2;
+}
+
+.editorial-value {
+  @apply font-serif text-3xl leading-none text-ink;
+}
+
+.editorial-sub {
+  @apply text-xs opacity-60 mt-1;
+}
+
+.logo-text {
+  @apply font-serif text-[38px] font-black tracking-tighter text-olive uppercase leading-none;
+}
